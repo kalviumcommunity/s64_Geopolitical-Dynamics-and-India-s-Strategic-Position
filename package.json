@@ -1,0 +1,21 @@
+{
+  "name": "geopolitical-dynamics-and-india-s-strategic-position",
+  "version": "1.0.0",
+  "description": "Project Title: **Geopolitical Dynamics and India's Strategic Position**",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kalviumcommunity/Geopolitical-Dynamics-and-India-s-Strategic-Position.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/kalviumcommunity/Geopolitical-Dynamics-and-India-s-Strategic-Position/issues"
+  },
+  "homepage": "https://github.com/kalviumcommunity/Geopolitical-Dynamics-and-India-s-Strategic-Position#readme"
+}
