@@ -69,4 +69,4 @@ Ultimately, this project will not only strengthen my coding skills but also prov
 
 Deploymment link (render):
 
-https://geopolitical-dynamics-and-india-s-gvf2.onrender.com
+https://s64-geopolitical-dynamics-and-india-s-e8a4.onrender.com
