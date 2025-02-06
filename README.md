@@ -57,7 +57,7 @@ The aim of this project is to investigate how global geopolitics, including majo
 ### Why This Project:
 I have chosen this project because geopolitics affects national security, economic stability, and global positioning in a very big way. In this scenario, the strategic location of India and the increasing influence in the world stage place it at a critical position in the international geopolitical scenario. Understanding how geopolitical trends affect India is crucial for future policymakers, analysts, and citizens alike.
 
-This project will be useful for all those wanting to understand the confluence of international relations and national policy, particularly as India charts its course through an increasingly complex world.
+This project will be useful for all those wanting to understand the confluence of international relations and national policy, particularly as India charts its course through an increasingly complex world.......
 
 By working on this project, I will:
 - Deepen my understanding of global politics, foreign policy, and international relations, especially as they pertain to India.
