@@ -66,6 +66,8 @@ By working on this project, I will:
 - Create a forum that can act as an educational tool for those interested in India's foreign relations and strategic decisions.
 
 Ultimately, this project will not only strengthen my coding skills but also provide a better understanding of the critical geopolitical factors shaping India's role on the global stage.
+hiiiiiii
+
 
 Deploymment link (render):
 

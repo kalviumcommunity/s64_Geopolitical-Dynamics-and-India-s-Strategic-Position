@@ -1,18 +1,32 @@
+require('dotenv').config();
 const express = require('express');
-const app = express();
+const { MongoClient } = require('mongodb');
 
-// Route for /ping with basic error handling
-app.get('/ping', (req, res) => {
+const app = express();
+const PORT = process.env.PORT || 8000;
+
+const client = new MongoClient(process.env.MONGO_URI);
+
+let dbStatus = "Disconnected";
+
+async function connectDB() {
     try {
-        res.send('pong');
+        await client.connect();
+        dbStatus = "Connected to MongoDB";
+        console.log(dbStatus);
     } catch (error) {
-        res.status(500).send('An error occurred');
+        dbStatus = "Failed to connect to MongoDB";
+        console.error(error);
     }
+}
+connectDB();
+
+
+app.get('/', (req, res) => {
+    res.send({ status: dbStatus });
 });
 
-// Use an environment variable for the port with a fallback to 3000
-const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
-    console.log(`Server is running on port http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
 });
