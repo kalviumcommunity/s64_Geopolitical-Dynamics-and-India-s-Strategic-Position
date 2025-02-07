@@ -21,9 +21,11 @@ async function connectDB() {
 }
 connectDB();
 
+
 app.get('/', (req, res) => {
     res.send({ status: dbStatus });
 });
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
