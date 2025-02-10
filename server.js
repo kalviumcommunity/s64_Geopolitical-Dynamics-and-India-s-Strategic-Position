@@ -5,26 +5,27 @@ const { MongoClient } = require('mongodb');
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-const client = new MongoClient(process.env.MONGO_URI);
+const client = new MongoClient(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+});
 
-let dbStatus = "Disconnected";
+let dbStatus = 'Disconnected';
 
 async function connectDB() {
     try {
         await client.connect();
-        dbStatus = "Connected to MongoDB";
-        console.log(dbStatus);
+        dbStatus = 'Connected';
+        console.log('MongoDB Connected');
     } catch (error) {
-        dbStatus = "Failed to connect to MongoDB";
-        console.error(error);
+        dbStatus = 'Error';
+        console.error('MongoDB Connection Error:', error);
     }
 }
 connectDB();
 
 app.get('/', (req, res) => {
-    res.send({ status: dbStatus });
+    res.send(`Database Status: ${dbStatus}`);
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
