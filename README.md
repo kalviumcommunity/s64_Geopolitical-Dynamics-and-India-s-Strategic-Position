@@ -75,3 +75,7 @@ kri'
 Deploymment link (render):
 
 https://s64-geopolitical-dynamics-and-india-s-e8a4.onrender.com
+
+Deployment link (cloudflare):
+
+https://s64-geopolitical-dynamics-and-india-s-strategic-position.pages.dev/
