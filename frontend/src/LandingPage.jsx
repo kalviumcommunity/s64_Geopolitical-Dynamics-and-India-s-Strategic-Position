@@ -1,11 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // ✅ Import useNavigate
 import './LandingPage.css';
-import indiaMap from './assets/india-map.png'; // Add this image
-import strategyIcon from './assets/strategy.png'; // Add icons
+import indiaMap from './assets/india-map.png';
+import strategyIcon from './assets/strategy.png';
 import economyIcon from './assets/economic.png';
 import diplomacyIcon from './assets/diplomacy.png';
 
 const LandingPage = () => {
+  const navigate = useNavigate(); // ✅ Initialize useNavigate
+
   return (
     <div className="landing-page">
       {/* Hero Section */}
@@ -14,7 +17,9 @@ const LandingPage = () => {
           <h1>India's Evolving Geostrategic Landscape</h1>
           <p className="hero-subtitle">Analyzing Power Shifts in the Indo-Pacific Century</p>
           <div className="cta-container">
-            <button className="cta-primary">Explore Analysis</button>
+            <button className="cta-primary" onClick={() => navigate("/exploratory-analysis")}>
+              Explore Analysis
+            </button>
             <button className="cta-secondary">Download White Paper</button>
           </div>
         </div>
