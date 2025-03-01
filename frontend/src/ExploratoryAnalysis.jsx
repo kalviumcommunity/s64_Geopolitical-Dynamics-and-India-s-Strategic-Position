@@ -7,25 +7,87 @@ const ExploratoryAnalysis = () => {
   const [timeRange, setTimeRange] = useState('decade');
   const [analysisData, setAnalysisData] = useState([]);
 
-  // Simulated API call with dynamic data generation
-  useEffect(() => {
-    const generateData = () => {
-      const baseValues = {
-        trade: { base: 50, variance: 15 },
-        defense: { base: 20, variance: 8 },
-        alliances: { base: 5, variance: 3 }
-      };
+  //imulated API call with dynamic data generation
+  // useEffect(() => {
+  //   const generateData = () => {
+  //     const baseValues = {
+  //       trade: { base: 50, variance: 15 },
+  //       defense: { base: 20, variance: 8 },
+  //       alliances: { base: 5, variance: 3 }
+  //     };
       
-      return Array.from({ length: timeRange === 'decade' ? 10 : 5 }, (_, i) => ({
-        year: new Date().getFullYear() - (timeRange === 'decade' ? 9 - i : 4 - i),
-        trade: Math.floor(baseValues.trade.base + Math.random() * baseValues.trade.variance * (i + 1)),
-        defense: Math.floor(baseValues.defense.base + Math.random() * baseValues.defense.variance * (i + 1)),
-        alliances: Math.floor(baseValues.alliances.base + Math.random() * baseValues.alliances.variance * (i + 1))
-      }));
-    };
+  //     return Array.from({ length: timeRange === 'decade' ? 10 : 5 }, (_, i) => ({
+  //       year: new Date().getFullYear() - (timeRange === 'decade' ? 9 - i : 4 - i),
+  //       trade: Math.floor(baseValues.trade.base + Math.random() * baseValues.trade.variance * (i + 1)),
+  //       defense: Math.floor(baseValues.defense.base + Math.random() * baseValues.defense.variance * (i + 1)),
+  //       alliances: Math.floor(baseValues.alliances.base + Math.random() * baseValues.alliances.variance * (i + 1))
+  //     }));
+  //   };
 
-    setAnalysisData(generateData());
-  }, [timeRange, selectedMetric]);  // 🔥 Added `selectedMetric` dependency
+  //   setAnalysisData(generateData());
+  // }, [timeRange, selectedMetric]);  // 🔥 Added `selectedMetric` dependency
+
+
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `http://localhost:8000/api/data?metric=${selectedMetric}&timeRange=${timeRange}`
+  //       );
+  //       const data = await response.json();
+  //       console.log("Fetched Data:", data);
+  //       setAnalysisData(data);
+  //     } catch (error) {
+  //       console.error("Error fetching data:", error);
+  //     }
+  //   };
+  
+  //   if (selectedMetric && timeRange) {
+  //     fetchData();
+  //   }
+  // }, [timeRange, selectedMetric]);
+  const generateData = (metric, timeRange) => {
+    const baseValues = {
+      trade: { base: 50, variance: 15 },
+      defense: { base: 20, variance: 8 },
+      alliances: { base: 5, variance: 3 }
+    };
+  
+    if (!baseValues[metric]) return null; // Handle invalid metric
+  
+    return Array.from({ length: timeRange === "decade" ? 10 : 5 }, (_, i) => ({
+      year: new Date().getFullYear() - (timeRange === "decade" ? 9 - i : 4 - i),
+      [metric]: Math.floor(
+        baseValues[metric].base +
+          Math.random() * baseValues[metric].variance * (i + 1)
+      ),
+    }));
+  };
+  
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:8000/api/data?metric=${selectedMetric}&timeRange=${timeRange}`
+        );
+        const result = await response.json();
+  
+        if (response.ok) {
+          setAnalysisData(result.data); // ✅ Store only the `data` array
+        } else {
+          console.error("Error fetching data:", result.error);
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+  
+    if (selectedMetric && timeRange) {
+      fetchData();
+    }
+  }, [timeRange, selectedMetric]); // ✅ Fetch when these change
+
 
   const metricConfig = {
     trade: { label: 'Trade Growth (%)', color: '#4a90e2' },

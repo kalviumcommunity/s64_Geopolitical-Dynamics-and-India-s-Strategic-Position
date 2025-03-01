@@ -6,6 +6,7 @@ const router = express.Router();
 module.exports = (db) => {
     const collection = db.collection('items');
 
+
     // Create
     router.post('/items', async (req, res) => {
         try {
@@ -28,6 +29,22 @@ module.exports = (db) => {
             res.status(500).json({ error: error.message });
         }
     });
+
+
+    router.get("/data", async (req, res) => {
+        const { metric, timeRange } = req.query;
+      
+        if (!metric || !timeRange) {
+          return res.status(400).json({ error: "Missing metric or timeRange" });
+        }
+      
+        const data = generateData(metric, timeRange);
+        if (!data) {
+          return res.status(404).json({ error: "Invalid metric" });
+        }
+      
+        res.json({ metric, timeRange, data });
+      });
 
     // Read by ID
     router.get('/items/:id', async (req, res) => {
