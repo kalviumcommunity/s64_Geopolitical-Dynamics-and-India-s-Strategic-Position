@@ -4,8 +4,19 @@ const AnalysisData = require('./models/AnalysisData');
 
 const router = express.Router();
 
-module.exports = (db) => {
-    const collection = db.collection('items');
+// Create a simple Item model for the items API
+const ItemSchema = new mongoose.Schema({
+    name: String,
+    description: String,
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+const Item = mongoose.model('Item', ItemSchema);
+
+module.exports = () => {
 
     // Create item using Mongoose
     router.post('/items', async (req, res) => {
@@ -32,20 +43,40 @@ module.exports = (db) => {
     });
 
 
-    router.get("/data", async (req, res) => {
-        const { metric, timeRange } = req.query;
-      
-        if (!metric || !timeRange) {
-          return res.status(400).json({ error: "Missing metric or timeRange" });
+    // Fetch analysis data with filtering by time range and metric
+    router.get('/analysis', async (req, res) => {
+        try {
+            const { timeRange = 'decade', metric = 'trade' } = req.query;
+            
+            // Calculate the number of years to look back based on time range
+            const yearsToLookBack = timeRange === 'decade' ? 10 : 5;
+            const currentYear = new Date().getFullYear();
+            const startYear = currentYear - yearsToLookBack;
+            
+            // Query MongoDB for filtered data
+            const data = await AnalysisData.find({ 
+                year: { $gte: startYear } 
+            }).sort({ year: 1 });
+            
+            if (!data.length) {
+                return res.status(404).json({ 
+                    message: 'No analysis data found for the specified time range' 
+                });
+            }
+            
+            // Transform data to focus on the requested metric
+            // This ensures the data structure is optimized for the frontend
+            const formattedData = data.map(item => ({
+                year: item.year,
+                [metric]: item[metric]
+            }));
+            
+            res.status(200).json(formattedData);
+        } catch (error) {
+            console.error('Error fetching analysis data:', error);
+            res.status(500).json({ error: error.message });
         }
-      
-        const data = generateData(metric, timeRange);
-        if (!data) {
-          return res.status(404).json({ error: "Invalid metric" });
-        }
-      
-        res.json({ metric, timeRange, data });
-      });
+    });
 
     // Read item by ID using Mongoose
     router.get('/items/:id', async (req, res) => {
