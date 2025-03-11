@@ -37,6 +37,9 @@ const LandingPage = () => {
             <button className="cta-primary" onClick={() => navigate("/exploratory-analysis")}>
               Explore Analysis
             </button>
+            <button className="cta-primary" onClick={() => navigate("/entity-form")}>
+              Strategic Entities
+            </button>
             <button className="cta-secondary" onClick={downloadWhitePaper}>Download White Paper</button>
           </div>
         </div>
