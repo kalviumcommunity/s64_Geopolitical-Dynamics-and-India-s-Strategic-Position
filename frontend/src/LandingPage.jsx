@@ -5,9 +5,26 @@ import indiaMap from './assets/india-map.png';
 import strategyIcon from './assets/strategy.png';
 import economyIcon from './assets/economic.png';
 import diplomacyIcon from './assets/diplomacy.png';
+import whitePaperPdf from './assets/india-geopolitical-whitepaper.pdf';
 
 const LandingPage = () => {
   const navigate = useNavigate(); // ✅ Initialize useNavigate
+  
+  // Function to handle white paper download
+  const downloadWhitePaper = () => {
+    // Create an anchor element
+    const link = document.createElement('a');
+    // Set the href to the PDF path
+    link.href = whitePaperPdf;
+    // Set download attribute with filename
+    link.download = 'India-Geopolitical-Whitepaper-2024.pdf';
+    // Append to document
+    document.body.appendChild(link);
+    // Trigger click
+    link.click();
+    // Clean up
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="landing-page">
@@ -20,7 +37,7 @@ const LandingPage = () => {
             <button className="cta-primary" onClick={() => navigate("/exploratory-analysis")}>
               Explore Analysis
             </button>
-            <button className="cta-secondary">Download White Paper</button>
+            <button className="cta-secondary" onClick={downloadWhitePaper}>Download White Paper</button>
           </div>
         </div>
       </header>
