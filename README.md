@@ -67,9 +67,7 @@ By working on this project, I will:
 
 Ultimately, this project will not only strengthen my coding skills but also provide a better understanding of the critical geopolitical factors shaping India's role on the global stage.
 hiiiiiii
-kri'
-']'
-'
+
 'vhghghjgvjg
 
 Deploymment link (render):
