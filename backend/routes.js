@@ -1,26 +1,27 @@
 const express = require('express');
-const { ObjectId } = require('mongodb');
+const mongoose = require('mongoose');
+const AnalysisData = require('./models/AnalysisData');
 
 const router = express.Router();
 
 module.exports = (db) => {
     const collection = db.collection('items');
 
-
-    // Create
+    // Create item using Mongoose
     router.post('/items', async (req, res) => {
         try {
-            const result = await collection.insertOne(req.body);
-            res.status(201).json({ message: 'Item created', item: { _id: result.insertedId, ...req.body } });
+            const newItem = new Item(req.body);
+            const savedItem = await newItem.save();
+            res.status(201).json({ message: 'Item created', item: savedItem });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
     });
 
-    // Read All
+    // Read All items using Mongoose
     router.get('/items', async (req, res) => {
         try {
-            const items = await collection.find().toArray();
+            const items = await Item.find();
             if (!items.length) {
                 return res.status(404).json({ message: 'No items found' });
             }
@@ -46,10 +47,10 @@ module.exports = (db) => {
         res.json({ metric, timeRange, data });
       });
 
-    // Read by ID
+    // Read item by ID using Mongoose
     router.get('/items/:id', async (req, res) => {
         try {
-            const item = await collection.findOne({ _id: new ObjectId(req.params.id) });
+            const item = await Item.findById(req.params.id);
             if (!item) {
                 return res.status(404).json({ message: 'Item not found' });
             }
@@ -59,27 +60,28 @@ module.exports = (db) => {
         }
     });
 
-    // Update
+    // Update item using Mongoose
     router.put('/items/:id', async (req, res) => {
         try {
-            const result = await collection.updateOne(
-                { _id: new ObjectId(req.params.id) },
-                { $set: req.body }
+            const updatedItem = await Item.findByIdAndUpdate(
+                req.params.id,
+                req.body,
+                { new: true }
             );
-            if (result.matchedCount === 0) {
+            if (!updatedItem) {
                 return res.status(404).json({ message: 'Item not found' });
             }
-            res.status(200).json({ message: 'Item updated', result });
+            res.status(200).json({ message: 'Item updated', item: updatedItem });
         } catch (error) {
             res.status(500).json({ error: error.message });
         }
     });
 
-    // Delete
+    // Delete item using Mongoose
     router.delete('/items/:id', async (req, res) => {
         try {
-            const result = await collection.deleteOne({ _id: new ObjectId(req.params.id) });
-            if (result.deletedCount === 0) {
+            const deletedItem = await Item.findByIdAndDelete(req.params.id);
+            if (!deletedItem) {
                 return res.status(404).json({ message: 'Item not found' });
             }
             res.status(200).json({ message: 'Item deleted' });

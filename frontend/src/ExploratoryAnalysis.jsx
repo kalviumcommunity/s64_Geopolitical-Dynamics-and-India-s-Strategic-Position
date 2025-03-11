@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import './ExploratoryAnalysis.css';
 
@@ -6,7 +7,10 @@ const ExploratoryAnalysis = () => {
   const [selectedMetric, setSelectedMetric] = useState('trade');
   const [timeRange, setTimeRange] = useState('decade');
   const [analysisData, setAnalysisData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+<<<<<<< HEAD
   //imulated API call with dynamic data generation
   // useEffect(() => {
   //   const generateData = () => {
@@ -88,6 +92,58 @@ const ExploratoryAnalysis = () => {
     }
   }, [timeRange, selectedMetric]); // ✅ Fetch when these change
 
+=======
+  // Fetch real data from MongoDB through the API
+  useEffect(() => {
+    const fetchAnalysisData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Make API request with query parameters
+        const response = await axios.get('/api/analysis', {
+          params: {
+            timeRange,
+            metric: selectedMetric
+          }
+        });
+        
+        // Set the data from API response
+        if (response.data && response.data.length > 0) {
+          setAnalysisData(response.data);
+        } else {
+          throw new Error('No data returned from API');
+        }
+      } catch (err) {
+        console.error('Error fetching analysis data:', err);
+        setError('Failed to load analysis data. Please try again later.');
+        
+        // Fallback to simulated data in case of API errors
+        // Using a simple check that will work in both Vite and CRA environments
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          const baseValues = {
+            trade: { base: 50, variance: 15 },
+            defense: { base: 20, variance: 8 },
+            alliances: { base: 5, variance: 3 }
+          };
+          
+          const fallbackData = Array.from({ length: timeRange === 'decade' ? 10 : 5 }, (_, i) => ({
+            year: new Date().getFullYear() - (timeRange === 'decade' ? 9 - i : 4 - i),
+            trade: Math.floor(baseValues.trade.base + Math.random() * baseValues.trade.variance * (i + 1)),
+            defense: Math.floor(baseValues.defense.base + Math.random() * baseValues.defense.variance * (i + 1)),
+            alliances: Math.floor(baseValues.alliances.base + Math.random() * baseValues.alliances.variance * (i + 1))
+          }));
+          
+          setAnalysisData(fallbackData);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchAnalysisData();
+  }, [timeRange, selectedMetric]);
+>>>>>>> be0f7ff953a8a81e2a5824a7bba1f2327b41daaa
 
   const metricConfig = {
     trade: { label: 'Trade Growth (%)', color: '#4a90e2' },
@@ -134,8 +190,13 @@ const ExploratoryAnalysis = () => {
       </div>
 
       <div className="visualization-container">
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={analysisData}>
+        {loading ? (
+          <div className="loading-indicator">Loading data...</div>
+        ) : error ? (
+          <div className="error-message">{error}</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={analysisData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis 
               dataKey="year"
@@ -167,8 +228,9 @@ const ExploratoryAnalysis = () => {
               dot={{ fill: metricConfig[selectedMetric].color, r: 4 }}
               activeDot={{ r: 8 }}
             />
-          </LineChart>
-        </ResponsiveContainer>
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className="metrics-context">

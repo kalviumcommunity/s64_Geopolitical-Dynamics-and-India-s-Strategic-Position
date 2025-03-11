@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 const routes = require('./routes');
 const cors = require('cors');
 
@@ -10,18 +10,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-const client = new MongoClient(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-});
-
 async function startServer() {
     try {
-        await client.connect();
-        const db = client.db('testdb');
+        await mongoose.connect(process.env.MONGO_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
         console.log('MongoDB Connected');
 
-        app.use('/api', routes(db));
+        app.use('/api', routes());
 
         app.get('/', (req, res) => {
             res.send('API is running...');
