@@ -1,5 +1,6 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom'; // ✅ Import useNavigate
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom'; // Added Link for entity links
+import axios from 'axios'; // For API calls
 import './LandingPage.css';
 import indiaMap from './assets/india-map.png';
 import strategyIcon from './assets/strategy.png';
@@ -8,7 +9,33 @@ import diplomacyIcon from './assets/diplomacy.png';
 import whitePaperPdf from './assets/india-geopolitical-whitepaper.pdf';
 
 const LandingPage = () => {
-  const navigate = useNavigate(); // ✅ Initialize useNavigate
+  const navigate = useNavigate(); // Initialize useNavigate
+  
+  // State for entities and loading/error states
+  const [entities, setEntities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Fetch entities on component mount
+  useEffect(() => {
+    fetchEntities();
+  }, []);
+  
+  // Function to fetch entities from API
+  const fetchEntities = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.get('/api/items');
+      setEntities(response.data || []);
+    } catch (err) {
+      console.error('Error fetching entities:', err);
+      setError('Failed to load strategic entities');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Function to handle white paper download
   const downloadWhitePaper = () => {
@@ -105,6 +132,42 @@ const LandingPage = () => {
             <div className="metric-value">48</div>
             <div className="metric-label">Strategic Partnerships Signed (2023)</div>
           </div>
+        </div>
+      </section>
+      
+      {/* Strategic Entities Section */}
+      <section className="entities-section">
+        <div className="section-header">
+          <h2>Strategic Entities</h2>
+          <p>Key geopolitical factors in India's strategic landscape</p>
+        </div>
+        
+        {loading ? (
+          <div className="loading-message">Loading strategic entities...</div>
+        ) : error ? (
+          <div className="error-message">{error}</div>
+        ) : entities.length === 0 ? (
+          <div className="empty-message">No strategic entities available.</div>
+        ) : (
+          <div className="entities-grid">
+            {entities.slice(0, 3).map((entity) => (
+              <div key={entity._id} className="entity-card">
+                <h3 className="entity-name">{entity.name}</h3>
+                <p className="entity-description">{entity.description}</p>
+                <div className="entity-meta">
+                  <span className="entity-date">
+                    Added: {new Date(entity.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        <div className="entities-action">
+          <button className="entities-button" onClick={() => navigate('/entity-form')}>
+            View All Entities
+          </button>
         </div>
       </section>
 

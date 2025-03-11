@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage';
 import ExploratoryAnalysis from './ExploratoryAnalysis';
 import EntityForm from './EntityForm'; // Import the entity form component
+import EntityUpdateForm from './EntityUpdateForm'; // Import the entity update form component
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/exploratory-analysis" element={<ExploratoryAnalysis />} />
         <Route path="/entity-form" element={<EntityForm />} />
+        <Route path="/update-entity/:id" element={<EntityUpdateForm />} />
       </Routes>
     </Router>
   );
