@@ -41,6 +41,7 @@ const EntityForm = () => {
     try {
       // Send POST request to add new item
       const response = await axios.post('/api/items', formData);
+      console.log('Item creation response:', response);
       
       // Reset form
       setFormData({
@@ -71,6 +72,37 @@ const EntityForm = () => {
       
       setApiDetails(errorDetails);
       setError(`Failed to add item: ${err.message}`);
+    }
+  };
+
+  // Handle entity deletion
+  const handleDeleteEntity = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this entity?')) {
+      return; // User cancelled deletion
+    }
+    
+    setError(null);
+    setApiDetails(null);
+    
+    try {
+      // Send DELETE request to remove entity
+      await axios.delete(`/api/items/${id}`);
+      
+      // Refresh the items list
+      fetchItems();
+    } catch (err) {
+      console.error('Error deleting entity:', err);
+      
+      // Detailed error information
+      const errorDetails = {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data
+      };
+      
+      setApiDetails(errorDetails);
+      setError(`Failed to delete entity: ${err.message}`);
     }
   };
 
@@ -203,6 +235,15 @@ const EntityForm = () => {
                     Added: {new Date(item.createdAt).toLocaleDateString()}
                   </span>
                 </div>
+                <div className="entity-actions">
+                  <Link to={`/update-entity/${item._id}`} className="edit-button">Edit</Link>
+                  <button 
+                    onClick={() => handleDeleteEntity(item._id)} 
+                    className="delete-button"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -212,7 +253,7 @@ const EntityForm = () => {
       {/* Debug info */}
       <div className="debug-info">
         <h3>Debug Information</h3>
-        <p><strong>API URL:</strong> {window.location.protocol}//{window.location.hostname}:{window.location.port}/api/items</p>
+        <p><strong>API URL:</strong> {`${window.location.protocol}//${window.location.hostname}:${window.location.port}/api/items`}</p>
         <p><strong>API Status:</strong> {error ? 'Error' : 'Connected'}</p>
       </div>
     </div>
