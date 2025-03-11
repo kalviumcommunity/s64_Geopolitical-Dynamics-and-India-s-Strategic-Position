@@ -38,7 +38,14 @@ module.exports = () => {
                 });
             }
             
-            res.status(200).json(data);
+            // Transform data to focus on the requested metric
+            // This ensures the data structure is optimized for the frontend
+            const formattedData = data.map(item => ({
+                year: item.year,
+                [metric]: item[metric]
+            }));
+            
+            res.status(200).json(formattedData);
         } catch (error) {
             console.error('Error fetching analysis data:', error);
             res.status(500).json({ error: error.message });
