@@ -6,8 +6,20 @@ const router = express.Router();
 
 // Create a simple Item model for the items API
 const ItemSchema = new mongoose.Schema({
-    name: String,
-    description: String,
+    name: {
+        type: String,
+        required: [true, 'Name is required'],
+        trim: true,
+        minlength: [3, 'Name must be at least 3 characters long'],
+        maxlength: [100, 'Name cannot exceed 100 characters']
+    },
+    description: {
+        type: String,
+        required: [true, 'Description is required'],
+        trim: true,
+        minlength: [10, 'Description must be at least 10 characters long'],
+        maxlength: [1000, 'Description cannot exceed 1000 characters']
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -31,6 +43,22 @@ module.exports = () => {
             res.status(201).json({ message: 'Item created', item: savedItem });
         } catch (error) {
             console.error('Error creating item:', error);
+            
+            // Handle validation errors
+            if (error.name === 'ValidationError') {
+                const validationErrors = {};
+                
+                // Extract validation error messages
+                for (const field in error.errors) {
+                    validationErrors[field] = error.errors[field].message;
+                }
+                
+                return res.status(400).json({ 
+                    error: 'Validation failed', 
+                    validationErrors 
+                });
+            }
+            
             res.status(500).json({ error: error.message });
         }
     });
@@ -111,7 +139,10 @@ module.exports = () => {
             const updatedItem = await Item.findByIdAndUpdate(
                 req.params.id,
                 req.body,
-                { new: true }
+                { 
+                    new: true, 
+                    runValidators: true // Enable validation for updates
+                }
             );
             if (!updatedItem) {
                 console.log('Item not found for update');
@@ -121,6 +152,22 @@ module.exports = () => {
             res.status(200).json({ message: 'Item updated', item: updatedItem });
         } catch (error) {
             console.error('Error updating item:', error);
+            
+            // Handle validation errors
+            if (error.name === 'ValidationError') {
+                const validationErrors = {};
+                
+                // Extract validation error messages
+                for (const field in error.errors) {
+                    validationErrors[field] = error.errors[field].message;
+                }
+                
+                return res.status(400).json({ 
+                    error: 'Validation failed', 
+                    validationErrors 
+                });
+            }
+            
             res.status(500).json({ error: error.message });
         }
     });
