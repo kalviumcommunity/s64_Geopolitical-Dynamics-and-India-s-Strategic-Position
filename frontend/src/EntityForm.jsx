@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './EntityForm.css';
@@ -7,20 +7,29 @@ const EntityForm = () => {
   // State for form inputs
   const [formData, setFormData] = useState({
     name: '',
-    description: ''
+    description: '',
+    created_by: ''
   });
   
   // State for items list and API diagnostics
   const [items, setItems] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [apiDetails, setApiDetails] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Fetch items on component mount
+  // Fetch items and users on component mount
   useEffect(() => {
+    fetchUsers();
     fetchItems();
   }, []);
+  
+  // Fetch items when selected user changes
+  useEffect(() => {
+    fetchItems();
+  }, [selectedUser]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -43,10 +52,11 @@ const EntityForm = () => {
       const response = await axios.post('/api/items', formData);
       console.log('Item creation response:', response);
       
-      // Reset form
+      // Reset form but keep the selected user
       setFormData({
         name: '',
-        description: ''
+        description: '',
+        created_by: formData.created_by // Keep the selected user
       });
       
       // Show success message
@@ -106,15 +116,32 @@ const EntityForm = () => {
     }
   };
 
-  // Fetch all items from API
+  // Fetch all users from API
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get('/api/users');
+      setUsers(response.data || []);
+      
+      // Set default selected user for the form if available
+      if (response.data && response.data.length > 0) {
+        setFormData(prev => ({ ...prev, created_by: response.data[0]._id }));
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Failed to load users. Please try again later.');
+    }
+  };
+  
+  // Fetch all items from API with optional user filtering
   const fetchItems = async () => {
     setLoading(true);
     setError(null);
     setApiDetails(null);
     
     try {
-      console.log('Fetching items from /api/items...');
-      const response = await axios.get('/api/items');
+      console.log(`Fetching items${selectedUser ? ` for user: ${selectedUser}` : ''}...`);
+      const url = selectedUser ? `/api/items?created_by=${selectedUser}` : '/api/items';
+      const response = await axios.get(url);
       console.log('API response:', response);
       setItems(response.data || []);
     } catch (err) {
@@ -186,6 +213,25 @@ const EntityForm = () => {
             />
           </div>
           
+          <div className="form-group">
+            <label htmlFor="created_by">Created By:</label>
+            <select
+              id="created_by"
+              name="created_by"
+              value={formData.created_by}
+              onChange={handleInputChange}
+              required
+              className="form-input"
+            >
+              <option value="">Select a User</option>
+              {users.map(user => (
+                <option key={user._id} value={user._id}>
+                  {user.username}
+                </option>
+              ))}
+            </select>
+          </div>
+          
           <button type="submit" className="submit-button">Add Entity</button>
           
           {submitSuccess && (
@@ -202,6 +248,23 @@ const EntityForm = () => {
         <div className="section-header">
           <h2>Strategic Entities</h2>
           <p>Current entities in the geopolitical database</p>
+        </div>
+        
+        <div className="filter-section">
+          <label htmlFor="user-filter">Filter by User:</label>
+          <select
+            id="user-filter"
+            className="form-input"
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+          >
+            <option value="">All Users</option>
+            {users.map(user => (
+              <option key={user._id} value={user._id}>
+                {user.username}
+              </option>
+            ))}
+          </select>
         </div>
         
         {loading ? (
@@ -231,6 +294,9 @@ const EntityForm = () => {
                 <h3 className="entity-name">{item.name}</h3>
                 <p className="entity-description">{item.description}</p>
                 <div className="entity-meta">
+                  <span className="entity-creator">
+                    Created by: {item.created_by ? item.created_by.username : 'Unknown'}
+                  </span>
                   <span className="entity-date">
                     Added: {new Date(item.createdAt).toLocaleDateString()}
                   </span>
