@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const AnalysisData = require('./models/AnalysisData');
+const User = require('./models/User');
 
 const router = express.Router();
 
@@ -19,6 +20,10 @@ const ItemSchema = new mongoose.Schema({
         trim: true,
         minlength: [10, 'Description must be at least 10 characters long'],
         maxlength: [1000, 'Description cannot exceed 1000 characters']
+    },
+    created_by: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
     createdAt: {
         type: Date,
@@ -63,15 +68,36 @@ module.exports = () => {
         }
     });
 
-    // Read All items using Mongoose
+    // Read All items using Mongoose with optional user filtering
     router.get('/items', async (req, res) => {
         try {
-            console.log('Fetching all items');
-            const items = await Item.find().sort({ createdAt: -1 });
+            const { created_by } = req.query;
+            console.log(`Fetching items${created_by ? ` for user: ${created_by}` : ''}`);
+            
+            // Build query based on whether a user filter was provided
+            const query = created_by ? { created_by } : {};
+            
+            const items = await Item.find(query)
+                .populate('created_by', 'username email')
+                .sort({ createdAt: -1 });
+                
             console.log(`Found ${items.length} items`);
             res.status(200).json(items);
         } catch (error) {
             console.error('Error fetching items:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+    
+    // Get all users for dropdown
+    router.get('/users', async (req, res) => {
+        try {
+            console.log('Fetching all users');
+            const users = await User.find({}, 'username email');
+            console.log(`Found ${users.length} users`);
+            res.status(200).json(users);
+        } catch (error) {
+            console.error('Error fetching users:', error);
             res.status(500).json({ error: error.message });
         }
     });
@@ -119,7 +145,7 @@ module.exports = () => {
     router.get('/items/:id', async (req, res) => {
         try {
             console.log(`Fetching item with ID: ${req.params.id}`);
-            const item = await Item.findById(req.params.id);
+            const item = await Item.findById(req.params.id).populate('created_by', 'username email');
             if (!item) {
                 console.log('Item not found');
                 return res.status(404).json({ message: 'Item not found' });
