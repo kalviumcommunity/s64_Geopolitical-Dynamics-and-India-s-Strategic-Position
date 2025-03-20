@@ -22,8 +22,8 @@ const ItemSchema = new mongoose.Schema({
         maxlength: [1000, 'Description cannot exceed 1000 characters']
     },
     created_by: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        type: String,
+        trim: true
     },
     createdAt: {
         type: Date,
