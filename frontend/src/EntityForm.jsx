@@ -13,23 +13,34 @@ const EntityForm = () => {
   
   // State for items list and API diagnostics
   const [items, setItems] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState('');
+  const [uniqueCreators, setUniqueCreators] = useState([]);
+  const [selectedCreator, setSelectedCreator] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [apiDetails, setApiDetails] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Fetch items and users on component mount
+  // Fetch items on component mount
   useEffect(() => {
-    fetchUsers();
     fetchItems();
   }, []);
   
-  // Fetch items when selected user changes
+  // Fetch items when selected creator changes
   useEffect(() => {
     fetchItems();
-  }, [selectedUser]);
+  }, [selectedCreator]);
+  
+  // Extract unique creator names from items
+  useEffect(() => {
+    if (items && items.length > 0) {
+      const creators = items
+        .map(item => item.created_by)
+        .filter(creator => creator) // Remove null/undefined values
+        .filter((creator, index, self) => self.indexOf(creator) === index); // Get unique values
+      
+      setUniqueCreators(creators);
+    }
+  }, [items]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -116,31 +127,15 @@ const EntityForm = () => {
     }
   };
 
-  // Fetch all users from API
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get('/api/users');
-      setUsers(response.data || []);
-      
-      // Set default selected user for the form if available
-      if (response.data && response.data.length > 0) {
-        setFormData(prev => ({ ...prev, created_by: response.data[0]._id }));
-      }
-    } catch (err) {
-      console.error('Error fetching users:', err);
-      setError('Failed to load users. Please try again later.');
-    }
-  };
-  
-  // Fetch all items from API with optional user filtering
+  // Fetch all items from API with optional creator filtering
   const fetchItems = async () => {
     setLoading(true);
     setError(null);
     setApiDetails(null);
     
     try {
-      console.log(`Fetching items${selectedUser ? ` for user: ${selectedUser}` : ''}...`);
-      const url = selectedUser ? `/api/items?created_by=${selectedUser}` : '/api/items';
+      console.log(`Fetching items${selectedCreator ? ` for creator: ${selectedCreator}` : ''}...`);
+      const url = selectedCreator ? `/api/items?created_by=${selectedCreator}` : '/api/items';
       const response = await axios.get(url);
       console.log('API response:', response);
       setItems(response.data || []);
@@ -215,21 +210,16 @@ const EntityForm = () => {
           
           <div className="form-group">
             <label htmlFor="created_by">Created By:</label>
-            <select
+            <input
+              type="text"
               id="created_by"
               name="created_by"
               value={formData.created_by}
               onChange={handleInputChange}
               required
+              placeholder="Enter creator's name"
               className="form-input"
-            >
-              <option value="">Select a User</option>
-              {users.map(user => (
-                <option key={user._id} value={user._id}>
-                  {user.username}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           
           <button type="submit" className="submit-button">Add Entity</button>
@@ -251,17 +241,17 @@ const EntityForm = () => {
         </div>
         
         <div className="filter-section">
-          <label htmlFor="user-filter">Filter by User:</label>
+          <label htmlFor="creator-filter">Filter by Creator:</label>
           <select
-            id="user-filter"
+            id="creator-filter"
             className="form-input"
-            value={selectedUser}
-            onChange={(e) => setSelectedUser(e.target.value)}
+            value={selectedCreator}
+            onChange={(e) => setSelectedCreator(e.target.value)}
           >
-            <option value="">All Users</option>
-            {users.map(user => (
-              <option key={user._id} value={user._id}>
-                {user.username}
+            <option value="">All Creators</option>
+            {uniqueCreators.map(creator => (
+              <option key={creator} value={creator}>
+                {creator}
               </option>
             ))}
           </select>
@@ -295,7 +285,7 @@ const EntityForm = () => {
                 <p className="entity-description">{item.description}</p>
                 <div className="entity-meta">
                   <span className="entity-creator">
-                    Created by: {item.created_by ? item.created_by.username : 'Unknown'}
+                    Created by: {item.created_by || 'Unknown'}
                   </span>
                   <span className="entity-date">
                     Added: {new Date(item.createdAt).toLocaleDateString()}
