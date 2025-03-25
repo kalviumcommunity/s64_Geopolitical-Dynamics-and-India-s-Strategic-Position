@@ -1,37 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const AnalysisData = require('./models/AnalysisData');
-const User = require('./models/User');
-
+const AnalysisData = require('./models/AnalysisData'); // Keep MongoDB model for analysis data
 const router = express.Router();
 
-// Create a simple Item model for the items API
-const ItemSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, 'Name is required'],
-        trim: true,
-        minlength: [3, 'Name must be at least 3 characters long'],
-        maxlength: [100, 'Name cannot exceed 100 characters']
-    },
-    description: {
-        type: String,
-        required: [true, 'Description is required'],
-        trim: true,
-        minlength: [10, 'Description must be at least 10 characters long'],
-        maxlength: [1000, 'Description cannot exceed 1000 characters']
-    },
-    created_by: {
-        type: String,
-        trim: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
-});
-
-const Item = mongoose.model('Item', ItemSchema);
+// Import Sequelize models and configured instance
+const { Item } = require('./db/models'); // This model now uses strategic_items table
+const { sequelize } = require('./db/config');
+const { Op } = require('sequelize');
 
 module.exports = () => {
     // API test endpoint to verify server is running
@@ -39,24 +14,31 @@ module.exports = () => {
         res.status(200).json({ status: 'OK', message: 'API is running' });
     });
 
-    // Create item using Mongoose
+    // Create item using Sequelize
     router.post('/items', async (req, res) => {
         try {
-            const newItem = new Item(req.body);
-            const savedItem = await newItem.save();
-            console.log('Item created:', savedItem);
-            res.status(201).json({ message: 'Item created', item: savedItem });
+            const newItem = await Item.create(req.body);
+            console.log('Item created with Sequelize:', newItem.toJSON());
+            
+            res.status(201).json({ 
+                message: 'Item created', 
+                item: newItem 
+            });
         } catch (error) {
             console.error('Error creating item:', error);
+            console.error('Error details:', error.message);
             
             // Handle validation errors
-            if (error.name === 'ValidationError') {
+            if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
                 const validationErrors = {};
                 
                 // Extract validation error messages
-                for (const field in error.errors) {
-                    validationErrors[field] = error.errors[field].message;
-                }
+                error.errors.forEach((err) => {
+                    validationErrors[err.path] = err.message;
+                    console.error(`Validation error in field '${err.path}': ${err.message}`);
+                });
+                
+                console.error('Request body was:', req.body);
                 
                 return res.status(400).json({ 
                     error: 'Validation failed', 
@@ -68,19 +50,21 @@ module.exports = () => {
         }
     });
 
-    // Read All items using Mongoose with optional user filtering
+    // Read All items using Sequelize with optional creator filtering
     router.get('/items', async (req, res) => {
         try {
             const { created_by } = req.query;
-            console.log(`Fetching items${created_by ? ` for user: ${created_by}` : ''}`);
+            console.log(`Fetching items${created_by ? ` for creator: ${created_by}` : ''}`);
             
-            // Build query based on whether a user filter was provided
-            const query = created_by ? { created_by } : {};
+            // Build query based on whether a creator filter was provided
+            const query = created_by ? 
+                { where: { created_by } } : 
+                {};
             
-            const items = await Item.find(query)
-                .populate('created_by', 'username email')
-                .sort({ createdAt: -1 });
-                
+            query.order = [['createdAt', 'DESC']];
+            
+            const items = await Item.findAll(query);
+            
             console.log(`Found ${items.length} items`);
             res.status(200).json(items);
         } catch (error) {
@@ -89,20 +73,30 @@ module.exports = () => {
         }
     });
     
-    // Get all users for dropdown
-    router.get('/users', async (req, res) => {
+    // Get all unique creators for the dropdown - simplified SQL approach
+    router.get('/creators', async (req, res) => {
         try {
-            console.log('Fetching all users');
-            const users = await User.find({}, 'username email');
-            console.log(`Found ${users.length} users`);
-            res.status(200).json(users);
+            console.log('Fetching all unique creators');
+            
+            // Direct SQL query approach - simpler and more reliable
+            // Updated to use the new 'strategic_items' table name
+            const result = await sequelize.query(
+                'SELECT DISTINCT created_by FROM strategic_items WHERE created_by IS NOT NULL ORDER BY created_by ASC',
+                { type: sequelize.QueryTypes.SELECT }
+            );
+            
+            // Extract just the creator names from the result
+            const creatorList = result.map(item => item.created_by);
+            
+            console.log(`Found ${creatorList.length} unique creators`);
+            res.status(200).json(creatorList);
         } catch (error) {
-            console.error('Error fetching users:', error);
+            console.error('Error fetching creators:', error);
             res.status(500).json({ error: error.message });
         }
     });
 
-    // Fetch analysis data with filtering by time range and metric
+    // Fetch analysis data with filtering by time range and metric (using MongoDB)
     router.get('/analysis', async (req, res) => {
         try {
             const { timeRange = 'decade', metric = 'trade' } = req.query;
@@ -141,16 +135,18 @@ module.exports = () => {
         }
     });
 
-    // Read item by ID using Mongoose
+    // Read item by ID using Sequelize
     router.get('/items/:id', async (req, res) => {
         try {
             console.log(`Fetching item with ID: ${req.params.id}`);
-            const item = await Item.findById(req.params.id).populate('created_by', 'username email');
+            const item = await Item.findByPk(req.params.id);
+            
             if (!item) {
                 console.log('Item not found');
                 return res.status(404).json({ message: 'Item not found' });
             }
-            console.log('Item found:', item);
+            
+            console.log('Item found:', item.toJSON());
             res.status(200).json(item);
         } catch (error) {
             console.error('Error fetching item by ID:', error);
@@ -158,35 +154,38 @@ module.exports = () => {
         }
     });
 
-    // Update item using Mongoose
+    // Update item using Sequelize
     router.put('/items/:id', async (req, res) => {
         try {
             console.log(`Updating item with ID: ${req.params.id}`);
-            const updatedItem = await Item.findByIdAndUpdate(
-                req.params.id,
-                req.body,
-                { 
-                    new: true, 
-                    runValidators: true // Enable validation for updates
-                }
-            );
-            if (!updatedItem) {
+            
+            // Find the item by ID
+            const item = await Item.findByPk(req.params.id);
+            
+            if (!item) {
                 console.log('Item not found for update');
                 return res.status(404).json({ message: 'Item not found' });
             }
-            console.log('Item updated:', updatedItem);
+            
+            // Update the item
+            await item.update(req.body);
+            
+            // Fetch the updated item
+            const updatedItem = await Item.findByPk(req.params.id);
+            
+            console.log('Item updated:', updatedItem.toJSON());
             res.status(200).json({ message: 'Item updated', item: updatedItem });
         } catch (error) {
             console.error('Error updating item:', error);
             
             // Handle validation errors
-            if (error.name === 'ValidationError') {
+            if (error.name === 'SequelizeValidationError') {
                 const validationErrors = {};
                 
                 // Extract validation error messages
-                for (const field in error.errors) {
-                    validationErrors[field] = error.errors[field].message;
-                }
+                error.errors.forEach((err) => {
+                    validationErrors[err.path] = err.message;
+                });
                 
                 return res.status(400).json({ 
                     error: 'Validation failed', 
@@ -198,17 +197,27 @@ module.exports = () => {
         }
     });
 
-    // Delete item using Mongoose
+    // Delete item using Sequelize
     router.delete('/items/:id', async (req, res) => {
         try {
             console.log(`Deleting item with ID: ${req.params.id}`);
-            const deletedItem = await Item.findByIdAndDelete(req.params.id);
-            if (!deletedItem) {
+            
+            // Find the item to delete
+            const item = await Item.findByPk(req.params.id);
+            
+            if (!item) {
                 console.log('Item not found for deletion');
                 return res.status(404).json({ message: 'Item not found' });
             }
-            console.log('Item deleted:', deletedItem);
-            res.status(200).json({ message: 'Item deleted' });
+            
+            // Store item info for response
+            const deletedItemInfo = item.toJSON();
+            
+            // Delete the item
+            await item.destroy();
+            
+            console.log('Item deleted:', deletedItemInfo);
+            res.status(200).json({ message: 'Item deleted', item: deletedItemInfo });
         } catch (error) {
             console.error('Error deleting item:', error);
             res.status(500).json({ error: error.message });

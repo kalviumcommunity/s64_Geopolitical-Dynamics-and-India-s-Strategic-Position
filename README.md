@@ -2,6 +2,59 @@
 
 Project Title: **Geopolitical Dynamics and India's Strategic Position**
 
+## Database Implementation
+
+This project now supports both MongoDB and MySQL databases with a focus on practical data management.
+
+### MySQL Setup and Creator-based Filtering
+
+The application uses Sequelize ORM to manage MySQL database operations:
+
+1. **User Model**: Stores user information including username and email
+2. **Item Model**: Stores strategic entities with a text-based `created_by` field for flexible creator attribution
+
+#### Setup Instructions:
+
+1. Configure your MySQL connection in `.env`:
+   ```
+   MYSQL_HOST=localhost
+   MYSQL_USER=root
+   MYSQL_PASSWORD=your_password
+   MYSQL_DATABASE=geopolitical_db
+   MYSQL_PORT=3306
+   ```
+
+2. Initialize and seed the MySQL database:
+   ```bash
+   # Install dependencies 
+   cd backend
+   npm install
+   
+   # Initialize MySQL with sample data
+   npm run init-mysql
+   
+   # Or initialize both databases
+   npm run init-all
+   ```
+
+3. Start the backend server:
+   ```bash
+   npm start
+   ```
+
+### New API Endpoints
+
+- `GET /api/creators` - Fetch all unique creator names from existing items
+- `GET /api/items?created_by=:creatorName` - Fetch items created by a specific creator
+- `POST /api/items` - Create a new item with creator attribution
+
+### UI Enhancements
+
+The frontend now includes:
+- Text input field for entering creator name when creating new entities
+- Dropdown for filtering entities by existing creator names
+- Entity display showing the creator's name
+
 ---
 
 ### Project Overview:
@@ -17,7 +70,7 @@ The aim of this project is to investigate how global geopolitics, including majo
 2. **Timeline of Major Events**
 • A timeline feature that highlights important geopolitical events and their direct or indirect consequences for India (for example, trade wars, military alliances, or sanctions).
 
-3. **India’s Foreign Policy Analysis**:
+~~3. **India’s Foreign Policy Analysis**:
 - Section on India's responses to geopolitical challenges, including alliances (such as Quad, BRICS), defense strategies, and diplomatic engagements.
 • Detailed case studies of India's foreign policy decisions and outcomes.
 

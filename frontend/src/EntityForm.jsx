@@ -13,9 +13,10 @@ const EntityForm = () => {
   
   // State for items list and API diagnostics
   const [items, setItems] = useState([]);
-  const [uniqueCreators, setUniqueCreators] = useState([]);
+  const [creators, setCreators] = useState([]);
   const [selectedCreator, setSelectedCreator] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingCreators, setLoadingCreators] = useState(true);
   const [error, setError] = useState(null);
   const [apiDetails, setApiDetails] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -23,24 +24,31 @@ const EntityForm = () => {
   // Fetch items on component mount
   useEffect(() => {
     fetchItems();
+    fetchCreators();
   }, []);
   
   // Fetch items when selected creator changes
   useEffect(() => {
     fetchItems();
   }, [selectedCreator]);
-  
-  // Extract unique creator names from items
-  useEffect(() => {
-    if (items && items.length > 0) {
-      const creators = items
-        .map(item => item.created_by)
-        .filter(creator => creator) // Remove null/undefined values
-        .filter((creator, index, self) => self.indexOf(creator) === index); // Get unique values
-      
-      setUniqueCreators(creators);
+
+  // Fetch all unique creators from API
+  const fetchCreators = async () => {
+    setLoadingCreators(true);
+    setError(null);
+    
+    try {
+      console.log('Fetching creators...');
+      const response = await axios.get('/api/creators');
+      console.log('Creators API response:', response);
+      setCreators(response.data || []);
+    } catch (err) {
+      console.error('Error fetching creators:', err);
+      setError(`Failed to load creators: ${err.message}`);
+    } finally {
+      setLoadingCreators(false);
     }
-  }, [items]);
+  };
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -63,18 +71,19 @@ const EntityForm = () => {
       const response = await axios.post('/api/items', formData);
       console.log('Item creation response:', response);
       
-      // Reset form but keep the selected user
+      // Reset form but keep the selected creator
       setFormData({
         name: '',
         description: '',
-        created_by: formData.created_by // Keep the selected user
+        created_by: formData.created_by // Keep the creator name
       });
       
       // Show success message
       setSubmitSuccess(true);
       
-      // Refresh items list
+      // Refresh items list and creators list
       fetchItems();
+      fetchCreators();
       
       // Clear success message after 3 seconds
       setTimeout(() => {
@@ -111,6 +120,8 @@ const EntityForm = () => {
       
       // Refresh the items list
       fetchItems();
+      // Also refresh creators as we might have removed the only entity by a specific creator
+      fetchCreators();
     } catch (err) {
       console.error('Error deleting entity:', err);
       
@@ -181,7 +192,7 @@ const EntityForm = () => {
         
         <form onSubmit={handleSubmit} className="entity-form">
           <div className="form-group">
-            <label htmlFor="name">Entity Name:</label>
+            <label htmlFor="name">Entity Name: <span className="field-hint">(3-100 characters)</span></label>
             <input
               type="text"
               id="name"
@@ -189,27 +200,37 @@ const EntityForm = () => {
               value={formData.name}
               onChange={handleInputChange}
               required
+              minLength="3"
+              maxLength="100"
               placeholder="Enter entity name"
               className="form-input"
             />
+            {formData.name && formData.name.length < 3 && (
+              <div className="field-error">Name must be at least 3 characters</div>
+            )}
           </div>
           
           <div className="form-group">
-            <label htmlFor="description">Description:</label>
+            <label htmlFor="description">Description: <span className="field-hint">(10-1000 characters)</span></label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleInputChange}
               required
+              minLength="10"
+              maxLength="1000"
               placeholder="Describe the entity's strategic significance"
               className="form-textarea"
               rows="4"
             />
+            {formData.description && formData.description.length < 10 && (
+              <div className="field-error">Description must be at least 10 characters</div>
+            )}
           </div>
           
           <div className="form-group">
-            <label htmlFor="created_by">Created By:</label>
+            <label htmlFor="created_by">Created By: <span className="field-hint">(2-50 characters)</span></label>
             <input
               type="text"
               id="created_by"
@@ -217,9 +238,14 @@ const EntityForm = () => {
               value={formData.created_by}
               onChange={handleInputChange}
               required
+              minLength="2"
+              maxLength="50"
               placeholder="Enter creator's name"
               className="form-input"
             />
+            {formData.created_by && formData.created_by.length < 2 && (
+              <div className="field-error">Creator name must be at least 2 characters</div>
+            )}
           </div>
           
           <button type="submit" className="submit-button">Add Entity</button>
@@ -229,7 +255,16 @@ const EntityForm = () => {
           )}
           
           {error && (
-            <div className="error-message">{error}</div>
+            <div className="error-message">
+              {error}
+              {apiDetails && apiDetails.data && apiDetails.data.validationErrors && (
+                <ul className="validation-errors">
+                  {Object.entries(apiDetails.data.validationErrors).map(([field, message]) => (
+                    <li key={field}><strong>{field}:</strong> {message}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
         </form>
       </section>
@@ -242,19 +277,23 @@ const EntityForm = () => {
         
         <div className="filter-section">
           <label htmlFor="creator-filter">Filter by Creator:</label>
-          <select
-            id="creator-filter"
-            className="form-input"
-            value={selectedCreator}
-            onChange={(e) => setSelectedCreator(e.target.value)}
-          >
-            <option value="">All Creators</option>
-            {uniqueCreators.map(creator => (
-              <option key={creator} value={creator}>
-                {creator}
-              </option>
-            ))}
-          </select>
+          {loadingCreators ? (
+            <div className="loading-indicator-inline">Loading creators...</div>
+          ) : (
+            <select
+              id="creator-filter"
+              className="form-input"
+              value={selectedCreator}
+              onChange={(e) => setSelectedCreator(e.target.value)}
+            >
+              <option value="">All Creators</option>
+              {creators.map(creator => (
+                <option key={creator} value={creator}>
+                  {creator}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         
         {loading ? (
@@ -280,7 +319,7 @@ const EntityForm = () => {
         ) : (
           <div className="entities-grid">
             {items.map((item) => (
-              <div key={item._id} className="entity-card">
+              <div key={item.id || item._id} className="entity-card">
                 <h3 className="entity-name">{item.name}</h3>
                 <p className="entity-description">{item.description}</p>
                 <div className="entity-meta">
@@ -292,9 +331,9 @@ const EntityForm = () => {
                   </span>
                 </div>
                 <div className="entity-actions">
-                  <Link to={`/update-entity/${item._id}`} className="edit-button">Edit</Link>
+                  <Link to={`/update-entity/${item.id || item._id}`} className="edit-button">Edit</Link>
                   <button 
-                    onClick={() => handleDeleteEntity(item._id)} 
+                    onClick={() => handleDeleteEntity(item.id || item._id)} 
                     className="delete-button"
                   >
                     Delete
@@ -311,6 +350,8 @@ const EntityForm = () => {
         <h3>Debug Information</h3>
         <p><strong>API URL:</strong> {`${window.location.protocol}//${window.location.hostname}:${window.location.port}/api/items`}</p>
         <p><strong>API Status:</strong> {error ? 'Error' : 'Connected'}</p>
+        <p><strong>Creators loaded:</strong> {creators.length}</p>
+        <p><strong>Items loaded:</strong> {items.length}</p>
       </div>
     </div>
   );
