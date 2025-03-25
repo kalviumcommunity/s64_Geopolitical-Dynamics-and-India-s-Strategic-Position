@@ -4,7 +4,11 @@
   "description": "Project Title: **Geopolitical Dynamics and India's Strategic Position**",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js",
+    "init-mysql": "node scripts/initializeMySQL.js",
+    "seed-mongo": "node scripts/seedDB.js",
+    "init-all": "npm run seed-mongo && npm run init-mysql"
   },
   "repository": {
     "type": "git",
@@ -22,6 +26,8 @@
     "express": "^4.21.2",
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.0",
-    "nodemon": "^3.1.9"
+    "mysql2": "^3.14.0",
+    "nodemon": "^3.1.9",
+    "sequelize": "^6.37.6"
   }
 }

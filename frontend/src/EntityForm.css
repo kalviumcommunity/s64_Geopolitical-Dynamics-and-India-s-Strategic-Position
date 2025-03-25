@@ -100,6 +100,37 @@
   color: #1e293b;
 }
 
+/* Validation Hint and Error Styles */
+.field-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: normal;
+  margin-left: 0.5rem;
+}
+
+.field-error {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--error);
+  display: flex;
+  align-items: center;
+}
+
+.field-error::before {
+  content: '⚠️';
+  margin-right: 0.5rem;
+}
+
+.validation-errors {
+  margin-top: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.validation-errors li {
+  margin-bottom: 0.5rem;
+  color: var(--error);
+}
+
 .form-input,
 .form-textarea {
   width: 100%;
@@ -115,6 +146,12 @@
   border-color: var(--primary);
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Validation error border styles */
+.form-input:invalid,
+.form-textarea:invalid {
+  border-color: var(--error);
 }
 
 .form-textarea {
@@ -164,6 +201,8 @@
   background: #fee2e2;
   color: var(--error);
   border: 1px solid #f87171;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 /* Entities List */
