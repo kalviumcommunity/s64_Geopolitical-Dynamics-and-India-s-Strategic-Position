@@ -54,8 +54,80 @@ body {
   
   .hero-subtitle {
     font-size: 1.5rem;
-    margin-bottom: 3rem;
+    margin-bottom: 1.5rem;
     opacity: 0.9;
+  }
+  
+  /* Username form styles */
+  .username-container {
+    margin-bottom: 1.5rem;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    width: 100%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .username-form {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .username-input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 2px solid var(--accent-color);
+    border-radius: 4px;
+    font-size: 16px;
+  }
+
+  .username-btn {
+    padding: 8px 16px;
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .username-btn:hover {
+    background-color: #a42828;
+  }
+
+  .logout-btn {
+    padding: 6px 12px;
+    background-color: #718096;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  .logout-btn:hover {
+    background-color: #4a5568;
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .user-info p {
+    margin: 0;
+  }
+
+  .error-message {
+    color: #fed7d7;
+    font-size: 14px;
+    margin-top: 5px;
+    font-weight: bold;
   }
   
   /* CTA Buttons */

@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const { sequelize, testConnection } = require('./db/config');
 const models = require('./db/models');
 const routes = require('./routes');
@@ -10,6 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser()); // Add cookie-parser middleware for authentication
 
 async function startServer() {
     try {
