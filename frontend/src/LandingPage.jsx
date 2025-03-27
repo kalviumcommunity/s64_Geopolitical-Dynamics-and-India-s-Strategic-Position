@@ -15,10 +15,22 @@ const LandingPage = () => {
   const [entities, setEntities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [username, setUsername] = useState('');
+  const [currentUser, setCurrentUser] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   
-  // Fetch entities on component mount
+  // Fetch entities and check for existing username cookie on component mount
   useEffect(() => {
     fetchEntities();
+    // Check for username cookie
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'username') {
+        setCurrentUser(decodeURIComponent(value));
+        break;
+      }
+    }
   }, []);
   
   // Function to fetch entities from API
@@ -34,6 +46,40 @@ const LandingPage = () => {
       setError('Failed to load strategic entities');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Function to handle username submission
+  const handleUsernameSubmit = async (e) => {
+    e.preventDefault();
+    setUsernameError('');
+    
+    if (!username.trim()) {
+      setUsernameError('Username is required');
+      return;
+    }
+    
+    try {
+      const response = await axios.post('/api/auth/login', { username });
+      if (response.status === 200) {
+        setCurrentUser(username);
+        setUsername('');
+      }
+    } catch (err) {
+      console.error('Error setting username:', err);
+      setUsernameError('Failed to set username');
+    }
+  };
+  
+  // Function to handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await axios.post('/api/auth/logout');
+      if (response.status === 200) {
+        setCurrentUser('');
+      }
+    } catch (err) {
+      console.error('Error logging out:', err);
     }
   };
   
@@ -60,6 +106,28 @@ const LandingPage = () => {
         <div className="hero-content">
           <h1>India's Evolving Geostrategic Landscape</h1>
           <p className="hero-subtitle">Analyzing Power Shifts in the Indo-Pacific Century</p>
+          
+          {/* Username form */}
+          <div className="username-container">
+            {currentUser ? (
+              <div className="user-info">
+                <p>Welcome, <strong>{currentUser}</strong>!</p>
+                <button onClick={handleLogout} className="logout-btn">Logout</button>
+              </div>
+            ) : (
+              <form onSubmit={handleUsernameSubmit} className="username-form">
+                <input
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="username-input"
+                />
+                <button type="submit" className="username-btn">Set Username</button>
+                {usernameError && <p className="error-message">{usernameError}</p>}
+              </form>
+            )}
+          </div>
           <div className="cta-container">
             <button className="cta-primary" onClick={() => navigate("/exploratory-analysis")}>
               Explore Analysis

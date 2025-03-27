@@ -4,11 +4,53 @@ const AnalysisData = require('./models/AnalysisData'); // Keep MongoDB model for
 const router = express.Router();
 
 // Import Sequelize models and configured instance
-const { Item } = require('./db/models'); // This model now uses strategic_items table
+const { Item, User } = require('./db/models'); // Import User model for authentication
 const { sequelize } = require('./db/config');
 const { Op } = require('sequelize');
 
 module.exports = () => {
+    // Simplified authentication routes - no validation needed
+    router.post('/auth/login', (req, res) => {
+        try {
+            const { username } = req.body;
+            
+            if (!username) {
+                return res.status(400).json({ error: 'Username is required' });
+            }
+            
+            console.log(`Setting username cookie for: ${username}`);
+            
+            // Set username cookie (expires in 24 hours)
+            res.cookie('username', username, { 
+                maxAge: 24 * 60 * 60 * 1000, // 24 hours
+                httpOnly: true,
+                sameSite: 'strict'
+            });
+            
+            console.log(`Username cookie set successfully for: ${username}`);
+            res.status(200).json({ 
+                message: 'Username set successfully',
+                username: username
+            });
+        } catch (error) {
+            console.error('Login error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+    
+    router.post('/auth/logout', (req, res) => {
+        try {
+            // Clear the username cookie
+            res.clearCookie('username');
+            
+            console.log('User logged out successfully');
+            res.status(200).json({ message: 'Logout successful' });
+        } catch (error) {
+            console.error('Logout error:', error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     // API test endpoint to verify server is running
     router.get('/health', (req, res) => {
         res.status(200).json({ status: 'OK', message: 'API is running' });
