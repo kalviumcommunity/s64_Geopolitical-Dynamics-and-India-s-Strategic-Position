@@ -19,19 +19,35 @@ const LandingPage = () => {
   const [currentUser, setCurrentUser] = useState('');
   const [usernameError, setUsernameError] = useState('');
   
-  // Fetch entities and check for existing username cookie on component mount
+  // Fetch entities and check for existing token cookie on component mount
   useEffect(() => {
     fetchEntities();
-    // Check for username cookie
+    // Check for token (we'll get username from login response)
     const cookies = document.cookie.split(';');
+    let hasToken = false;
     for (let cookie of cookies) {
       const [name, value] = cookie.trim().split('=');
-      if (name === 'username') {
-        setCurrentUser(decodeURIComponent(value));
+      if (name === 'token') {
+        hasToken = true;
+        // If we have a token but no current user, fetch the user profile
+        if (!currentUser) {
+          axios.get('/api/auth/me')
+            .then(response => {
+              if (response.data && response.data.username) {
+                setCurrentUser(response.data.username);
+              }
+            })
+            .catch(err => console.error('Error fetching user profile:', err));
+        }
         break;
       }
     }
-  }, []);
+    
+    // If no token is found, make sure currentUser is cleared
+    if (!hasToken && currentUser) {
+      setCurrentUser('');
+    }
+  }, [currentUser]);
   
   // Function to fetch entities from API
   const fetchEntities = async () => {
@@ -49,7 +65,7 @@ const LandingPage = () => {
     }
   };
   
-  // Function to handle username submission
+  // Function to handle username submission (JWT authentication)
   const handleUsernameSubmit = async (e) => {
     e.preventDefault();
     setUsernameError('');
@@ -62,12 +78,13 @@ const LandingPage = () => {
     try {
       const response = await axios.post('/api/auth/login', { username });
       if (response.status === 200) {
-        setCurrentUser(username);
+        // Use username from response
+        setCurrentUser(response.data.username);
         setUsername('');
       }
     } catch (err) {
-      console.error('Error setting username:', err);
-      setUsernameError('Failed to set username');
+      console.error('Error logging in:', err);
+      setUsernameError('Failed to log in');
     }
   };
   
@@ -219,7 +236,7 @@ const LandingPage = () => {
         ) : (
           <div className="entities-grid">
             {entities.slice(0, 3).map((entity) => (
-              <div key={entity._id} className="entity-card">
+              <div key={entity.id} className="entity-card">
                 <h3 className="entity-name">{entity.name}</h3>
                 <p className="entity-description">{entity.description}</p>
                 <div className="entity-meta">

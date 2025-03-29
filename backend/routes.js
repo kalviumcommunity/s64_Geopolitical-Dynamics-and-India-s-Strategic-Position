@@ -1,5 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken'); // Import JWT for token generation
 const AnalysisData = require('./models/AnalysisData'); // Keep MongoDB model for analysis data
 const router = express.Router();
 
@@ -8,8 +9,11 @@ const { Item, User } = require('./db/models'); // Import User model for authenti
 const { sequelize } = require('./db/config');
 const { Op } = require('sequelize');
 
+// JWT secret key - in production, use environment variables
+const JWT_SECRET = 'your-jwt-secret-key'; // TODO: Move to environment variables
+
 module.exports = () => {
-    // Simplified authentication routes - no validation needed
+    // JWT-based authentication routes
     router.post('/auth/login', (req, res) => {
         try {
             const { username } = req.body;
@@ -18,18 +22,26 @@ module.exports = () => {
                 return res.status(400).json({ error: 'Username is required' });
             }
             
-            console.log(`Setting username cookie for: ${username}`);
+            console.log(`Generating JWT token for user: ${username}`);
             
-            // Set username cookie (expires in 24 hours)
-            res.cookie('username', username, { 
+            // Create JWT token with username
+            const token = jwt.sign(
+                { username: username },
+                JWT_SECRET,
+                { expiresIn: '24h' } // Token expires in 24 hours
+            );
+            
+            // Set token in cookie
+            res.cookie('token', token, { 
                 maxAge: 24 * 60 * 60 * 1000, // 24 hours
                 httpOnly: true,
-                sameSite: 'strict'
+                sameSite: 'strict',
+                secure: process.env.NODE_ENV === 'production' // Use secure in production
             });
             
-            console.log(`Username cookie set successfully for: ${username}`);
+            console.log(`JWT token cookie set successfully for: ${username}`);
             res.status(200).json({ 
-                message: 'Username set successfully',
+                message: 'Login successful',
                 username: username
             });
         } catch (error) {
@@ -40,8 +52,8 @@ module.exports = () => {
     
     router.post('/auth/logout', (req, res) => {
         try {
-            // Clear the username cookie
-            res.clearCookie('username');
+            // Clear the JWT token cookie
+            res.clearCookie('token');
             
             console.log('User logged out successfully');
             res.status(200).json({ message: 'Logout successful' });
@@ -50,7 +62,62 @@ module.exports = () => {
             res.status(500).json({ error: error.message });
         }
     });
-
+    
+    // User profile endpoint - returns user info from token
+    router.get('/auth/me', (req, res) => {
+        try {
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json({ error: 'Not authenticated' });
+            }
+            
+            // Verify and decode the token
+            const decoded = jwt.verify(token, JWT_SECRET);
+            
+            // Return user info from token
+            res.status(200).json({
+                username: decoded.username
+            });
+        } catch (error) {
+            console.error('Error getting user profile:', error);
+            // Clear invalid token
+            if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+                res.clearCookie('token');
+                return res.status(401).json({ error: 'Invalid or expired token' });
+            }
+            res.status(500).json({ error: error.message });
+        }
+    });
+    // Middleware to verify JWT token
+    const verifyToken = (req, res, next) => {
+        const token = req.cookies.token;
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Unauthorized: No token provided' });
+        }
+        
+        try {
+            // Verify the token
+            const decoded = jwt.verify(token, JWT_SECRET);
+            req.user = decoded; // Set user info from token
+            next(); // Proceed to the next middleware/route handler
+        } catch (error) {
+            console.error('Token verification error:', error);
+            // Clear invalid token
+            res.clearCookie('token');
+            return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+        }
+    };
+    
+    // Example of a protected route using the verifyToken middleware
+    // Uncomment and use for routes that require authentication
+    // router.get('/protected-route', verifyToken, (req, res) => {
+    //     res.status(200).json({ 
+    //         message: 'This is a protected route',
+    //         user: req.user
+    //     });
+    // });
     // API test endpoint to verify server is running
     router.get('/health', (req, res) => {
         res.status(200).json({ status: 'OK', message: 'API is running' });
