@@ -1,4 +1,5 @@
 const express = require('express');
+require('dotenv').config();
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken'); // Import JWT for token generation
 const AnalysisData = require('./models/AnalysisData'); // Keep MongoDB model for analysis data
@@ -10,7 +11,7 @@ const { sequelize } = require('./db/config');
 const { Op } = require('sequelize');
 
 // JWT secret key - in production, use environment variables
-const JWT_SECRET = 'your-jwt-secret-key'; // TODO: Move to environment variables
+const JWT_SECRET = process.env.JWT_SECRET || 'default_secret'; // Use environment variable
 
 module.exports = () => {
     // JWT-based authentication routes
